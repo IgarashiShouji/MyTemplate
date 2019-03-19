@@ -10,15 +10,26 @@ class MyThread
 private:
     enum
     {
-        CNT = 4
+        BEGIN = 0,
+        WAKEUP,
+        RUN,
+        CNT = 4,
     };
+    mutex               master_mtx;
+    condition_variable  master_cond;
     mutex               mtx[CNT];
     condition_variable  cond[CNT];
     thread              th[CNT];
-    bool                is_ready[CNT];
+    int                 state[CNT];
+    void (*func)(MyThread & self, int idx);
+    unsigned int        event[CNT];
 public:
     MyThread(void);
     virtual ~MyThread(void);
     void main(int idx);
-    void wakeup(int idx);
+    void wakeup(int idx, void (*func)(MyThread & self, int idx));
+    void waitWakeup(void);
+    unsigned int wait(int idx);
+    void setEvent(int idx, unsigned int event);
+    void waitClearEvent(int idx, unsigned int event);
 };

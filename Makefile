@@ -9,7 +9,7 @@ clean:
 	rm -rf $(TARGET) libMyTemplate.a Objects
 
 libMyTemplate.a: Objects/MyThread.o
-	ar rcs $@ $^
+	ar rcus $@ $^
 
 $(TARGET): Objects/main.o libMyTemplate.a Objects
 	g++ $(CPPFLAGS) -o $@ $< -L . -lMyTemplate -lpthread
