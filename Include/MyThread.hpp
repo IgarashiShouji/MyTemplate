@@ -28,7 +28,9 @@ public:
     virtual ~MyThread(void);
     void main(int idx);
     void wakeup(int idx, void (*func)(MyThread & self, int idx));
-    void waitWakeup(void);
+protected:
+    void waitWakeup(int idx);
+public:
     unsigned int wait(int idx);
     void setEvent(int idx, unsigned int event);
     void waitClearEvent(int idx, unsigned int event);
