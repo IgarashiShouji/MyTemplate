@@ -110,6 +110,13 @@ void WorkerThread::waitClearEventAll(void)
     {
         for(size_t id=0; id<ID_MAX; id++)
         {
+            if(RUN == this->state[id])
+            {
+                return false;
+            }
+        }
+        for(size_t id=0; id<ID_MAX; id++)
+        {
             if(this->event[id] & ~1)
             {
                 return false;
@@ -119,6 +126,24 @@ void WorkerThread::waitClearEventAll(void)
     };
     unique_lock<mutex> lock(master_mtx);
     master_cond.wait(lock, lamda);
+}
+
+unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
+{
+    auto lamda = [this, id, wait_event]
+    {
+        if(this->event[id] & wait_event)
+        {
+            return true;
+        }
+        return false;
+    };
+    unique_lock<mutex> lock(mtx[id]);
+    cond[id].wait(lock, lamda);
+    lock_guard<mutex> lock_master(master_mtx);
+    unsigned int event = this->event[id] & wait_event;
+    this->event[id] &= ~wait_event;
+    return event;
 }
 
 void WorkerThread::run(size_t id)

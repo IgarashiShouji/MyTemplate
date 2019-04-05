@@ -30,6 +30,7 @@ public:
     void setEvent(size_t id, unsigned int event);
     void waitClearEvent(size_t id, unsigned int event);
     void waitClearEventAll(void);
+    unsigned int wait(size_t id, unsigned int wait_event);
     virtual void main(size_t id, unsigned int event);
 
 protected:

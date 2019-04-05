@@ -1,5 +1,6 @@
 #include <thread>
 #include <mutex>
+#include <vector>
 #include <condition_variable>
 #include <cstdio>
 
@@ -10,28 +11,23 @@ class MyThread
 private:
     enum
     {
-        BEGIN = 0,
-        WAKEUP,
+        WAKEUP = 0,
+        WAIT,
         RUN,
-        CNT = 4,
     };
-    mutex               master_mtx;
-    condition_variable  master_cond;
-    mutex               mtx[CNT];
-    condition_variable  cond[CNT];
-    thread              th[CNT];
-    int                 state[CNT];
-    void (*func)(MyThread & self, int idx);
-    unsigned int        event[CNT];
+    mutex                       master_mtx;
+    condition_variable          master_cond;
+    vector<mutex>               mtx;
+    vector<condition_variable>  cond;
+    vector<thread>              task;
+    vector<int>                 state;
+    vector<unsigned int>        event;
 public:
     MyThread(void);
     virtual ~MyThread(void);
-    void main(int idx);
-    void wakeup(int idx, void (*func)(MyThread & self, int idx));
-protected:
-    void waitWakeup(int idx);
-public:
-    unsigned int wait(int idx);
+
+    void main(int idx, unsigned int event);
     void setEvent(int idx, unsigned int event);
     void waitClearEvent(int idx, unsigned int event);
+    unsigned int waitEvent(unsigned int mask);
 };
