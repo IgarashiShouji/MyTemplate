@@ -15,25 +15,6 @@ WorkerThread::WorkerThread(void)
         thread temp(&WorkerThread::run, this, id);
         tasks[id].swap(temp);
     }
-    for(size_t id=0; id<ID_MAX; id++)
-    {
-        {
-            {
-                lock_guard<mutex> lock(mtx[id]);
-            }
-            cond[id].notify_one();
-            auto lamda = [this, id]
-            {
-                if(WAKEUP != state[id])
-                {
-                    return true;
-                }
-                return false;
-            };
-            unique_lock<mutex> lock(master_mtx);
-            master_cond.wait(lock, lamda);
-        }
-    }
 }
 
 WorkerThread::~WorkerThread(void)
@@ -41,14 +22,10 @@ WorkerThread::~WorkerThread(void)
     for(size_t id=0; id<ID_MAX; id++)
     {
         {
-            {
-                lock_guard<mutex> lock(mtx[id]);
-                this->state[id] = RUN;
-                this->event[id] |= 1;
-            }
-            cond[id].notify_one();
+            lock_guard<mutex> lock(mtx[id]);
+            this->state[id] = END;
         }
-        waitClearEvent(id, 1);
+        cond[id].notify_one();
     }
     for(auto & obj : tasks)
     {
@@ -63,6 +40,7 @@ size_t WorkerThread::getWaitTask(void)
     {
         for(size_t id=0; id<ID_MAX; id++)
         {
+            lock_guard<mutex> lock(mtx[id]);
             if(this->state[id] == WAIT)
             {
                 result = id;
@@ -76,9 +54,44 @@ size_t WorkerThread::getWaitTask(void)
     return result;
 }
 
+void WorkerThread::waitEmptyEvent(size_t id, unsigned int event)
+{
+    auto lamda = [this, id, event]
+    {
+        if(this->event[id] & event)
+        {
+            return false;
+        }
+        return true;
+    };
+    unique_lock<mutex> lock(mtx[id]);
+    master_cond.wait(lock, lamda);
+}
+
+void WorkerThread::waitEmptyEvent(void)
+{
+    auto lamda = [this]
+    {
+        for(size_t id=0; id<ID_MAX; id++)
+        {
+            lock_guard<mutex> lock(mtx[id]);
+            if(RUN == this->state[id])
+            {
+                return false;
+            }
+            if(0 != this->event[id])
+            {
+                return false;
+            }
+        }
+        return true;
+    };
+    unique_lock<mutex> lock(master_mtx);
+    master_cond.wait(lock, lamda);
+}
+
 void WorkerThread::setEvent(size_t id, unsigned int event)
 {
-    event &= ~1;
     if(0 != event)
     {
         {
@@ -90,123 +103,74 @@ void WorkerThread::setEvent(size_t id, unsigned int event)
     }
 }
 
-void WorkerThread::waitClearEvent(size_t id, unsigned int event)
-{
-    auto lamda = [this, id, event]
-    {
-        if(this->event[id] & event)
-        {
-            return false;
-        }
-        return true;
-    };
-    unique_lock<mutex> lock(master_mtx);
-    master_cond.wait(lock, lamda);
-}
-
-void WorkerThread::waitClearEventAll(void)
-{
-    auto lamda = [this]
-    {
-        for(size_t id=0; id<ID_MAX; id++)
-        {
-            if(RUN == this->state[id])
-            {
-                return false;
-            }
-        }
-        for(size_t id=0; id<ID_MAX; id++)
-        {
-            if(this->event[id] & ~1)
-            {
-                return false;
-            }
-        }
-        return true;
-    };
-    unique_lock<mutex> lock(master_mtx);
-    master_cond.wait(lock, lamda);
-}
-
 unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
 {
-    auto lamda = [this, id, wait_event]
+    unsigned int event = 0;
+    auto lamda = [this, id, &event, wait_event]
     {
-        if(this->event[id] & wait_event)
+        event = this->event[id] & wait_event;
+        this->event[id] &= ~wait_event;
+        if(0 != event)
         {
+            this->state[id] = RUN;
             return true;
         }
+        this->state[id] = WAIT;
+        master_cond.notify_one();
         return false;
     };
     unique_lock<mutex> lock(mtx[id]);
     cond[id].wait(lock, lamda);
-    lock_guard<mutex> lock_master(master_mtx);
-    unsigned int event = this->event[id] & wait_event;
-    this->event[id] &= ~wait_event;
+    master_cond.notify_one();
     return event;
 }
 
 void WorkerThread::run(size_t id)
 {
-    {
-        auto lamda = [this, id]
-        {
-            if(WAKEUP == state[id])
-            {
-                lock_guard<mutex> lock(master_mtx);
-                this->state[id] = WAIT;
-                master_cond.notify_one();
-                return true;
-            }
-            return false;
-        };
-        unique_lock<mutex> lock(mtx[id]);
-        cond[id].wait(lock, lamda);
-    }
     unsigned int event = 0;
-    while(1)
+    while(END != this->state[id])
     {
-        {
-            lock_guard<mutex> lock_master(master_mtx);
-            this->state[id] = WAIT;
-        }
         master_cond.notify_one();
         {
-            auto lamda = [this, id]
+            auto lamda = [this, id, &event]
             {
-                if(0 != this->event[id])
+                if(END == this->state[id])
                 {
+                    event = 0;
                     return true;
                 }
+                event |= this->event[id];
+                this->event[id] = 0;
+                if(0 != event)
+                {
+                    this->state[id] = RUN;
+                    return true;
+                }
+                this->state[id] = WAIT;
+                master_cond.notify_one();
                 return false;
             };
             unique_lock<mutex> lock(mtx[id]);
             cond[id].wait(lock, lamda);
-            lock_guard<mutex> lock_master(master_mtx);
-            event |= this->event[id];
-            this->event[id] = 0;
+            master_cond.notify_one();
         }
-        master_cond.notify_one();
-        if(1 & event)
-        {
-            break;
-        }
-        event &= ~1;
-        for(unsigned int evt=2; 0 != evt; evt = evt << 1)
+        for(unsigned int evt=1; 0 != evt; evt = evt << 1)
         {
             if(event & evt)
             {
                 main(id, evt);
                 event &= ~evt;
+                break;
             }
         }
     }
 }
+
 void WorkerThread::main(size_t id, unsigned int event)
 {
 }
 
-#ifdef _TEST_MAIN
+#ifdef _TEST_WORKER_THREAD
 #include <iostream>
 
 class TestThread : public WorkerThread
@@ -216,6 +180,7 @@ public:
     virtual ~TestThread(void){}
     virtual void main(size_t id, unsigned int event);
 };
+
 void TestThread::main(size_t id, unsigned int event)
 {
     printf("id = %x: event = %08x\n", static_cast<int>(id), event);
@@ -231,13 +196,13 @@ int main(int argc, char * argv[])
     try
     {
         TestThread myThread;
-        static const size_t list[] = { 0x02, 0x04, 0x18, 0x10, 0x20, 0x40, 0x80 };
+        static const size_t list[] = { 0x01, 0x04, 0x18, 0x10, 0x20, 0x40, 0x80 };
         for(auto evt: list)
         {
             size_t id = myThread.getWaitTask();
             myThread.setEvent(id, evt);
         }
-        myThread.waitClearEventAll();
+        myThread.waitEmptyEvent();
     }
     catch(exception & exp)
     {

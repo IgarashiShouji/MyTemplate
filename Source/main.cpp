@@ -12,10 +12,10 @@ class SerialConrol : public WorkerThread
 public:
     enum
     {
-        EXEC_TX         = 0x00000002,
-        EXEC_RX         = 0x00000004,
-        RCV             = 0x00000040,
-        RCV_END         = 0x00000080,
+        EXEC_TX         = 0x00000001,
+        EXEC_RX         = 0x00000002,
+        RCV             = 0x00000100,
+        RCV_END         = 0x00000200
     };
 protected:
     boost::asio::io_service     io;
@@ -47,9 +47,11 @@ SerialConrol::SerialConrol(const char * name)
     port.set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::even));
     port.set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
 }
+
 SerialConrol::~SerialConrol(void)
 {
 }
+
 size_t SerialConrol::send(const char * data, size_t size)
 {
     if(0<size)
@@ -62,6 +64,7 @@ size_t SerialConrol::send(const char * data, size_t size)
     }
     return 0;
 }
+
 size_t SerialConrol::recive(unsigned char * data, size_t size)
 {
    if(port.is_open())
@@ -71,10 +74,12 @@ size_t SerialConrol::recive(unsigned char * data, size_t size)
    }
    return 0;
 }
+
 void SerialConrol::close(void)
 {
     port.close();
 }
+
 static unsigned char calcSum(char * buff, size_t size)
 {
     unsigned char sum = 0;
@@ -84,6 +89,7 @@ static unsigned char calcSum(char * buff, size_t size)
     }
     return sum;
 }
+
 void SerialConrol::main(size_t id, unsigned int evt)
 {
     switch(evt)
@@ -98,6 +104,7 @@ void SerialConrol::main(size_t id, unsigned int evt)
         break;
     }
 }
+
 void SerialConrol::execTx(void)
 {
     char buff[256];
@@ -135,6 +142,7 @@ void SerialConrol::execTx(void)
     }
     cout.flush();
 }
+
 void SerialConrol::execRx(void)
 {
     setEvent(TxID, RCV);
@@ -177,7 +185,7 @@ void SerialConrol::operator () (void)
 {
     TxID = getWaitTask();
     setEvent(TxID, EXEC_TX);
-    waitClearEventAll();
+    waitEmptyEvent();
     cout.flush();
 }
 

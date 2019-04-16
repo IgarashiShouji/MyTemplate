@@ -13,6 +13,7 @@ public:
         WAKEUP = 0,
         WAIT,
         RUN,
+        END,
         ID_MAX = 4,
     };
 private:
@@ -27,9 +28,9 @@ public:
     WorkerThread(void);
     virtual ~WorkerThread(void);
     size_t getWaitTask(void);
+    void waitEmptyEvent(size_t id, unsigned int event);
+    void waitEmptyEvent(void);
     void setEvent(size_t id, unsigned int event);
-    void waitClearEvent(size_t id, unsigned int event);
-    void waitClearEventAll(void);
     unsigned int wait(size_t id, unsigned int wait_event);
     virtual void main(size_t id, unsigned int event);
 
