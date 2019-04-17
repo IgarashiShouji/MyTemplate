@@ -108,6 +108,11 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
     unsigned int event = 0;
     auto lamda = [this, id, &event, wait_event]
     {
+        if(END == this->state[id])
+        {
+            event = 0;
+            return true;
+        }
         event = this->event[id] & wait_event;
         this->event[id] &= ~wait_event;
         if(0 != event)
@@ -115,7 +120,7 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
             this->state[id] = RUN;
             return true;
         }
-        this->state[id] = WAIT;
+        this->state[id] = RUN_WAIT;
         master_cond.notify_one();
         return false;
     };
@@ -125,10 +130,16 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
     return event;
 }
 
+int WorkerThread::refState(size_t id)
+{
+    lock_guard<mutex> lock(mtx[id]);
+    return this->state[id];
+}
+
 void WorkerThread::run(size_t id)
 {
     unsigned int event = 0;
-    while(END != this->state[id])
+    while(END != refState(id))
     {
         master_cond.notify_one();
         {

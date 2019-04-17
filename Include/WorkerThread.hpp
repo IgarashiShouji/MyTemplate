@@ -10,11 +10,12 @@ class WorkerThread
 public:
     enum
     {
-        WAKEUP = 0,
-        WAIT,
-        RUN,
-        END,
-        ID_MAX = 4,
+        WAKEUP = 0,     // Thread State: State before transitioning to the first wait
+        WAIT,           // Thread State: State of wait
+        RUN,            // Thread State: State of run
+        RUN_WAIT,       // Thread State: State of event wait on run
+        END,            // Thread State: State of end
+        ID_MAX = 4      // Thread Count
     };
 private:
     std::mutex              master_mtx;
@@ -35,6 +36,7 @@ public:
     virtual void main(size_t id, unsigned int event);
 
 protected:
+    int refState(size_t id);
     void run(size_t id);
 };
 
