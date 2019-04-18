@@ -15,7 +15,14 @@ public:
         RCV_END = 0x80000000,
     };
 protected:
+    typedef struct
+    {
+        unsigned char   stage;
+        size_t          no;
+    } Info;
     size_t tid[4];
+    vector<string> tx;
+    vector<Info> ft;
 
 public:
     TextFilter(void);
@@ -23,21 +30,33 @@ public:
     virtual void main(size_t id, unsigned int evt);
     virtual void operator () (void);
 };
+
 TextFilter::TextFilter(void)
 {
 }
+
 TextFilter::~TextFilter(void)
 {
 }
+
 void TextFilter::main(size_t id, unsigned int evt)
 {
 }
+
 void TextFilter::operator () (void)
 {
     string str;
+    size_t line=0;
     while(getline(cin, str))
     {
-        cout << str << endl;
+        Info info = { 0, line };
+        tx.push_back(str);
+        ft.push_back(info);
+        line ++;
+    }
+    for(size_t idx=0, max=ft.size(); idx<max; idx++)
+    {
+        cout << tx[ft[idx].no] << endl;
     }
 }
 
@@ -69,8 +88,8 @@ int main(int argc, char * argv[])
         {
             fname = argmap["file"].as<string>();
         }
-//        TextFilter app;
-//        app();
+        TextFilter tes;
+        tes();
     }
     catch(exception & exp)
     {

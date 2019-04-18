@@ -187,22 +187,43 @@ void WorkerThread::main(size_t id, unsigned int event)
 
 #ifdef _TEST_WORKER_THREAD
 #include <iostream>
-
 class TestThread : public WorkerThread
 {
 public:
-    TestThread(void) {}
-    virtual ~TestThread(void){}
+    TestThread(void);
+    virtual ~TestThread(void);
     virtual void main(size_t id, unsigned int event);
+    void operator() (void);
 };
 
-void TestThread::main(size_t id, unsigned int event)
+TestThread::TestThread(void)
 {
-    printf("id = %x: event = %08x\n", static_cast<int>(id), event);
-    fflush(stdout);
+}
+
+TestThread::~TestThread(void)
+{
+}
+
+void TestThread ::main(size_t id, unsigned int event)
+{
+    printf("  ID(%d): %08x\n", id, event);
     if(event & 0xf0)
     {
         this_thread::sleep_for(chrono::milliseconds(100));
+    }
+}
+
+void TestThread::operator() (void)
+{
+    for(size_t cnt=0; cnt<10; cnt ++)
+    {
+        static const size_t list[] = { 0x01, 0x04, 0x18, 0x10, 0x20, 0x40, 0x80 };
+        for(auto event: list)
+        {
+            size_t id = getWaitTask();
+            setEvent(id, event);
+        }
+        waitEmptyEvent();
     }
 }
 
@@ -210,14 +231,11 @@ int main(int argc, char * argv[])
 {
     try
     {
-        TestThread myThread;
-        static const size_t list[] = { 0x01, 0x04, 0x18, 0x10, 0x20, 0x40, 0x80 };
-        for(auto evt: list)
-        {
-            size_t id = myThread.getWaitTask();
-            myThread.setEvent(id, evt);
-        }
-        myThread.waitEmptyEvent();
+        cout << "create" << endl;
+        TestThread tes;
+        cout << "start" << endl;
+        tes();
+        cout << "end" << endl;
     }
     catch(exception & exp)
     {
