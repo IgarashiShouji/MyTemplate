@@ -96,6 +96,10 @@ void WorkerThread::setEvent(size_t id, unsigned int event)
     {
         {
             lock_guard<mutex> lock(mtx[id]);
+            if(END == this->state[id])
+            {
+                return;
+            }
             this->state[id] = RUN;
             this->event[id] |= event;
         }
