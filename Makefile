@@ -17,7 +17,7 @@ clean:
 Objects:
 	mkdir -p Objects
 
-libMyTemplate.a: Objects Objects/*.o
+libMyTemplate.a: Objects/MyThread.o Objects/WorkerThread.o Objects/TextFilter.o
 	ar rcus $@ Objects/*.o
 
 WorkerThread.exe: Source/WorkerThread.cpp Include/WorkerThread.hpp libMyTemplate.a
