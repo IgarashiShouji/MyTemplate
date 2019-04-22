@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 
 class WorkerThread
 {
@@ -18,15 +19,16 @@ public:
         ID_MAX = 4      // Thread Count
     };
 private:
-    std::mutex              master_mtx;
-    std::condition_variable master_cond;
-    std::mutex              mtx[ID_MAX];
-    std::condition_variable cond[ID_MAX];
-    std::thread             tasks[ID_MAX];
-    int                     state[ID_MAX];
-    unsigned int            event[ID_MAX];
+    std::mutex                              master_mtx;
+    std::condition_variable                 master_cond;
+    std::vector<std::thread>                tasks;
+    std::vector<std::mutex>                 mtx;
+    std::vector<std::condition_variable>    cond;
+    std::vector<int>                        state;
+    std::vector<unsigned int>               event;
 public:
     WorkerThread(void);
+    WorkerThread(int th_cnt);
     virtual ~WorkerThread(void);
     size_t getWaitTask(void);
     void waitEmptyEvent(size_t id, unsigned int event);
@@ -38,6 +40,9 @@ public:
 protected:
     int refState(size_t id);
     void run(size_t id);
+
+private:
+    void wakeup(void);
 };
 
 #endif
