@@ -4,13 +4,25 @@
 using namespace std;
 
 WorkerThread::WorkerThread(void)
+  : tasks(ID_MAX), mtx(ID_MAX), cond(ID_MAX), state(ID_MAX), event(ID_MAX)
 {
-    for(size_t id=0; id<ID_MAX; id ++)
+    wakeup();
+}
+
+WorkerThread::WorkerThread(int th_cnt)
+  : tasks(th_cnt), mtx(th_cnt), cond(th_cnt), state(th_cnt), event(th_cnt)
+{
+    wakeup();
+}
+
+void WorkerThread::wakeup(void)
+{
+    for(size_t id=0, max=state.size(); id < max; id ++)
     {
         state[id] = WAKEUP;
         event[id] = 0;
     }
-    for(size_t id=0; id<ID_MAX; id ++)
+    for(size_t id=0, max=tasks.size(); id < max; id ++)
     {
         thread temp(&WorkerThread::run, this, id);
         tasks[id].swap(temp);
@@ -19,11 +31,11 @@ WorkerThread::WorkerThread(void)
 
 WorkerThread::~WorkerThread(void)
 {
-    for(size_t id=0; id<ID_MAX; id++)
+    for(size_t id=0, max=state.size(); id < max; id++)
     {
         {
             lock_guard<mutex> lock(mtx[id]);
-            this->state[id] = END;
+            state[id] = END;
         }
         cond[id].notify_one();
     }
@@ -38,10 +50,10 @@ size_t WorkerThread::getWaitTask(void)
     size_t result;
     auto lamda = [this, &result]
     {
-        for(size_t id=0; id<ID_MAX; id++)
+        for(size_t id=0, max=state.size(); id < max; id++)
         {
             lock_guard<mutex> lock(mtx[id]);
-            if(this->state[id] == WAIT)
+            if(state[id] == WAIT)
             {
                 result = id;
                 return true;
@@ -72,14 +84,14 @@ void WorkerThread::waitEmptyEvent(void)
 {
     auto lamda = [this]
     {
-        for(size_t id=0; id<ID_MAX; id++)
+        for(size_t id=0, max=state.size(); id < max; id++)
         {
             lock_guard<mutex> lock(mtx[id]);
-            if(RUN == this->state[id])
+            if(RUN == state[id])
             {
                 return false;
             }
-            if(0 != this->event[id])
+            if(0 != event[id])
             {
                 return false;
             }
@@ -96,11 +108,11 @@ void WorkerThread::setEvent(size_t id, unsigned int event)
     {
         {
             lock_guard<mutex> lock(mtx[id]);
-            if(END == this->state[id])
+            if(END == state[id])
             {
                 return;
             }
-            this->state[id] = RUN;
+            state[id] = RUN;
             this->event[id] |= event;
         }
         cond[id].notify_one();
@@ -112,7 +124,7 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
     unsigned int event = 0;
     auto lamda = [this, id, &event, wait_event]
     {
-        if(END == this->state[id])
+        if(END == state[id])
         {
             event = 0;
             return true;
@@ -121,10 +133,10 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
         this->event[id] &= ~wait_event;
         if(0 != event)
         {
-            this->state[id] = RUN;
+            state[id] = RUN;
             return true;
         }
-        this->state[id] = RUN_WAIT;
+        state[id] = RUN_WAIT;
         master_cond.notify_one();
         return false;
     };
@@ -137,7 +149,7 @@ unsigned int WorkerThread::wait(size_t id, unsigned int wait_event)
 int WorkerThread::refState(size_t id)
 {
     lock_guard<mutex> lock(mtx[id]);
-    return this->state[id];
+    return state[id];
 }
 
 void WorkerThread::run(size_t id)
@@ -149,7 +161,7 @@ void WorkerThread::run(size_t id)
         {
             auto lamda = [this, id, &event]
             {
-                if(END == this->state[id])
+                if(END == state[id])
                 {
                     event = 0;
                     return true;
@@ -158,10 +170,10 @@ void WorkerThread::run(size_t id)
                 this->event[id] = 0;
                 if(0 != event)
                 {
-                    this->state[id] = RUN;
+                    state[id] = RUN;
                     return true;
                 }
-                this->state[id] = WAIT;
+                state[id] = WAIT;
                 master_cond.notify_one();
                 return false;
             };
@@ -197,6 +209,7 @@ public:
 };
 
 TestThread::TestThread(void)
+//  : WorkerThread(8)
 {
 }
 
@@ -206,8 +219,8 @@ TestThread::~TestThread(void)
 
 void TestThread ::main(size_t id, unsigned int event)
 {
-    printf("  ID(%d): %08x\n", static_cast<int>(id), event);
-    if(event & 0xf0)
+    printf("  ID(%d): %08x\n", static_cast<unsigned int>(id), event);
+    if(0xf & event)
     {
         this_thread::sleep_for(chrono::milliseconds(100));
     }

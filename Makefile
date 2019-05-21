@@ -1,14 +1,18 @@
 TARGET=test.exe
 
 CFLAGS=-g -Wall -pipe -I ./Include --input-charset=UTF-8 --exec-charset=UTF-8 -O3 -march=native
-CPPFLAGS=$(CFLAGS) -std=c++14
 ifdef MSYSTEM
 LIBS=-L . -lMyTemplate -lboost_program_options-mt -lpthread -lws2_32 -static
 else
 LIBS=-L . -lMyTemplate  -lboost_program_options -lboost_regex -lboost_system -lpthread
 endif
+CPPFLAGS=$(CFLAGS) -std=c++14
 
+ifdef MSYSTEM
+all: Objects $(TARGET) WorkerThread.exe TextFilter.exe ComList.exe
+else
 all: Objects $(TARGET) WorkerThread.exe TextFilter.exe
+endif
 
 clean:
 	rm -rf $(TARGET) libMyTemplate.a Objects WorkerThread.exe TextFilter.exe
@@ -16,7 +20,7 @@ clean:
 Objects:
 	mkdir -p Objects
 
-libMyTemplate.a: Objects Objects/*.o
+libMyTemplate.a: Objects/MyThread.o Objects/WorkerThread.o Objects/TextFilter.o
 	ar rcus $@ Objects/*.o
 
 WorkerThread.exe: Source/WorkerThread.cpp Include/WorkerThread.hpp libMyTemplate.a
@@ -24,6 +28,11 @@ WorkerThread.exe: Source/WorkerThread.cpp Include/WorkerThread.hpp libMyTemplate
 
 TextFilter.exe: Source/TextFilter.cpp libMyTemplate.a
 	g++ $(CPPFLAGS) -o $@ $< -D_TEST_TEXT_FILTER $(LIBS)
+
+ifdef MSYSTEM
+ComList.exe: Source/ComList.cpp Include/ComList.hpp
+	g++ $(CPPFLAGS) -o $@ $< -D_COM_LIST -lsetupapi -lksguid -lole32 -lwinmm -ldsound -liconv
+endif
 
 $(TARGET): Objects/main.o libMyTemplate.a
 	g++ $(CPPFLAGS) -o $@ $< $(LIBS)
