@@ -206,7 +206,7 @@ TestThread::~TestThread(void)
 
 void TestThread ::main(size_t id, unsigned int event)
 {
-    printf("  ID(%d): %08x\n", id, event);
+    printf("  ID(%d): %08x\n", static_cast<int>(id), event);
     if(event & 0xf0)
     {
         this_thread::sleep_for(chrono::milliseconds(100));
