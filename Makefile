@@ -9,9 +9,9 @@ endif
 CPPFLAGS=$(CFLAGS) -std=c++14
 
 ifdef MSYSTEM
-all: Objects $(TARGET) WorkerThread.exe TextFilter.exe ComList.exe
+all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe ComList.exe
 else
-all: Objects $(TARGET) WorkerThread.exe TextFilter.exe
+all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe
 endif
 
 clean:
@@ -20,7 +20,7 @@ clean:
 Objects:
 	mkdir -p Objects
 
-libMyTemplate.a: Objects/MyThread.o Objects/WorkerThread.o Objects/TextFilter.o
+libMyTemplate.a: Objects/MyThread.o Objects/WorkerThread.o Objects/TextFilter.o Objects/SerialCotrol.o
 	ar rcus $@ Objects/*.o
 
 WorkerThread.exe: Source/WorkerThread.cpp Include/WorkerThread.hpp libMyTemplate.a
@@ -28,6 +28,9 @@ WorkerThread.exe: Source/WorkerThread.cpp Include/WorkerThread.hpp libMyTemplate
 
 TextFilter.exe: Source/TextFilter.cpp libMyTemplate.a
 	g++ $(CPPFLAGS) -o $@ $< -D_TEST_TEXT_FILTER $(LIBS)
+
+SerialCotrol.exe: Source/SerialCotrol.cpp libMyTemplate.a
+	g++ $(CPPFLAGS) -o $@ $< -D_TEST_SERIAL $(LIBS)
 
 ifdef MSYSTEM
 ComList.exe: Source/ComList.cpp Include/ComList.hpp
@@ -40,7 +43,9 @@ $(TARGET): Objects/main.o libMyTemplate.a
 Objects/%.o: Source/%.cpp
 	g++ $(CPPFLAGS) -c -o $@ $<
 
+
 Objects/main.o:         Source/main.cpp         Include/MyThread.hpp Include/WorkerThread.hpp
 Objects/MyThread.o:     Source/MyThread.cpp     Include/MyThread.hpp
 Objects/WorkerThread.o: Source/WorkerThread.cpp Include/WorkerThread.hpp
 Objects/TextFilter.o:   Source/TextFilter.cpp   Include/WorkerThread.hpp
+Objects/SerialCotrol.o: Source/SerialCotrol.cpp Include/WorkerThread.hpp
