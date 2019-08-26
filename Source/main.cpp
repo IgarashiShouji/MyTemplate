@@ -1,200 +1,115 @@
-#include "WorkerThread.cpp"
-
-#include <boost/asio.hpp>
+#include <boost/process.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <regex>
+#include <string>
 #include <iostream>
 #include <cstring>
 #include <cstdio>
 
+using namespace boost::process;
 using namespace std;
 
-class SerialConrol : public WorkerThread
+class ChildProcess
 {
+private:
+    string      line;
+    ipstream    pipe_out;
+    ipstream    pipe_err;
+    opstream *  pipe_in;
+    child *     ps;
 public:
-    enum
-    {
-        EXEC_TX         = 0x00000001,
-        EXEC_RX         = 0x00000002,
-        RCV             = 0x00000100,
-        RCV_END         = 0x00000200
-    };
-protected:
-    boost::asio::io_service     io;
-    boost::asio::serial_port    port;
-    vector<string>              req_list;
-    unsigned int                req_idx;
-    size_t                      TxID;
-    size_t                      RxID;
-
-public:
-    SerialConrol(const char * name);
-    virtual ~SerialConrol(void);
-    virtual size_t send(const char * data, size_t size);
-    virtual size_t recive(unsigned char * data, size_t size);
-    virtual void close(void);
-    virtual void main(size_t id, unsigned int evt);
-
-
-    virtual void operator () (void);
-    virtual void execTx(void);
-    virtual void execRx(void);
+    ChildProcess(const char * cmd);
+    ChildProcess(const string & cmd);
+    virtual ~ChildProcess(void);
+    virtual void closeInput(void);
+    opstream & in(void);
+    void wait(void);
+    void wait(const string & key);
+    void wait(const char * key);
 };
-SerialConrol::SerialConrol(const char * name)
-  : port(io, name)
+
+ChildProcess::ChildProcess(const char * cmd)
 {
-    port.set_option(boost::asio::serial_port_base::baud_rate(9600));
-    port.set_option(boost::asio::serial_port_base::character_size(8));
-    port.set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
-    port.set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::even));
-    port.set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+    pipe_in = new opstream();
+    ps = new child(cmd, std_out > pipe_out, std_err > pipe_err, std_in < *pipe_in);
 }
 
-SerialConrol::~SerialConrol(void)
+ChildProcess::ChildProcess(const string & cmd)
 {
+    pipe_in = new opstream();
+    ps = new child(cmd, std_out > pipe_out, std_err > pipe_err, std_in < *pipe_in);
 }
 
-size_t SerialConrol::send(const char * data, size_t size)
+ChildProcess::~ChildProcess(void)
 {
-    if(0<size)
+    closeInput();
+    delete ps;
+    ps = nullptr;
+}
+
+void ChildProcess::closeInput(void)
+{
+    if(nullptr != pipe_in)
     {
-        if(port.is_open())
-        {
-            size_t len = port.write_some(boost::asio::buffer(data, size));
-            return len;
-        }
-    }
-    return 0;
-}
-
-size_t SerialConrol::recive(unsigned char * data, size_t size)
-{
-   if(port.is_open())
-   {
-       size_t len = port.read_some(boost::asio::buffer(data, size));
-       return len;
-   }
-   return 0;
-}
-
-void SerialConrol::close(void)
-{
-    port.close();
-}
-
-static unsigned char calcSum(char * buff, size_t size)
-{
-    unsigned char sum = 0;
-    for(size_t idx=0; idx < size; idx++)
-    {
-        sum += static_cast<unsigned char>(buff[idx]);
-    }
-    return sum;
-}
-
-void SerialConrol::main(size_t id, unsigned int evt)
-{
-    switch(evt)
-    {
-    case EXEC_TX:
-        execTx();
-        break;
-    case EXEC_RX:
-        execRx();
-        break;
-    default:
-        break;
+        delete pipe_in;
+        pipe_in = nullptr;
     }
 }
 
-void SerialConrol::execTx(void)
+opstream & ChildProcess::in(void)
 {
-    char buff[256];
-    RxID = getWaitTask();
-    setEvent(RxID, EXEC_RX);
-    if(RCV_END & wait(TxID, RCV|RCV_END))
-    {
-        cout.flush();
-        return;
-    }
-    static const char * const cmd[] { "Start", "End" };
-    cout << cmd[0] << ":";
-    sprintf(buff, "%s\x0d\x0a", cmd[0]);
-    send(buff, strlen(buff));
-    cout.flush();
-    for(unsigned short addr=0x0000; addr < 0x2000; addr += 8)
-    {
-        sprintf(buff, "0x%04X", addr);
-        unsigned char sum = calcSum(buff, strlen(buff));
-        sprintf(buff, "0x%04X%02X\x0d\x0a", addr, sum);
-        if(RCV_END & wait(TxID, RCV|RCV_END))
-        {
-            cout.flush();
-            return;
-        }
-        printf("0x%04X%02X:", addr, sum);
-        send(&(buff[0]), strlen(&(buff[0])));
-        req_list.push_back(buff);
-    }
-    if(!(RCV_END & wait(TxID, RCV|RCV_END)))
-    {
-        cout << cmd[1] << ":";
-        sprintf(buff, "%s\x0d\x0a", cmd[1]);
-        send(buff, strlen(buff));
-    }
-    cout.flush();
+    return *pipe_in;
 }
 
-void SerialConrol::execRx(void)
+void ChildProcess::wait(const char * key)
 {
-    setEvent(TxID, RCV);
+    string str(key);
+    wait(str);
+}
 
-    string str;
-    boost::asio::streambuf buff;
-    istream is(&buff);
-
-    boost::asio::read_until(port, buff, "\n");
-    getline(is, str);
-    if(0 < str.size())
+void ChildProcess::wait(const string & key)
+{
+    regex reg(key);
+    while(pipe_out && getline(pipe_out, line))
     {
-        str.erase(str.size()-1,1);
-        cout  << str << endl;
-        cout.flush();
-        setEvent(TxID, RCV);
-    }
-    str.clear();
-    boost::asio::read_until(port, buff, "\n");
-    while(getline(is, str))
-    {
-        if(0 < str.size())
-        {
-            str.erase(str.size()-1,1);
-            cout  << str << endl;
-            cout.flush();
-            setEvent(TxID, RCV);
-        }
-        if(str == "END")
+        cout << line << endl;
+        if(regex_search(line, reg))
         {
             break;
         }
-        str.clear();
-        boost::asio::read_until(port, buff, "\n");
+        ps->wait();
     }
-    setEvent(TxID, RCV_END);
-    cout.flush();
 }
-void SerialConrol::operator () (void)
+
+void ChildProcess::wait(void)
 {
-    TxID = getWaitTask();
-    setEvent(TxID, EXEC_TX);
-    waitEmptyEvent();
-    cout.flush();
+    while(pipe_out && getline(pipe_out, line))
+    {
+        cout << line << endl;
+        ps->wait();
+    }
+    while(pipe_err && getline(pipe_err, line))
+    {
+        cout << line << endl;
+        ps->wait();
+    }
 }
 
 int main(int argc, char * argv[])
 {
     try
     {
-        SerialConrol com(argv[1]);
-        com();
+        string key("string 2");
+        ChildProcess ps("cat");
+        (ps.in()) << "test string 1" << endl;
+        (ps.in()) << "test " << key << endl;
+        (ps.in()) << "test string 3" << endl;
+        ps.closeInput();
+        ps.wait(key);
+        cout << "wait 2" << endl;
+        ps.wait();
     }
     catch(exception & exp)
     {
