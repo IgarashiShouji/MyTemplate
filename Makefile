@@ -9,13 +9,13 @@ endif
 CPPFLAGS=$(CFLAGS) -std=c++14
 
 ifdef MSYSTEM
-all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe ComList.exe
+all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe comlist.exe
 else
 all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe
 endif
 
 clean:
-	rm -rf $(TARGET) libMyTemplate.a Objects WorkerThread.exe TextFilter.exe SerialCotrol.exe
+	rm -rf $(TARGET) libMyTemplate.a Objects WorkerThread.exe TextFilter.exe SerialCotrol.exe comlist.exe
 
 Objects:
 	mkdir -p Objects
@@ -33,7 +33,7 @@ SerialCotrol.exe: Source/SerialCotrol.cpp libMyTemplate.a
 	g++ $(CPPFLAGS) -o $@ $< -D_TEST_SERIAL $(LIBS)
 
 ifdef MSYSTEM
-ComList.exe: Source/ComList.cpp Include/ComList.hpp
+comlist.exe: Source/ComList.cpp Include/ComList.hpp
 	g++ $(CPPFLAGS) -o $@ $< -D_COM_LIST -lsetupapi -lksguid -lole32 -lwinmm -ldsound -liconv
 endif
 

@@ -1,16 +1,33 @@
+/**
+ * Print COM list on microsoft windows
+ *
+ * @file    ComList.cpp
+ * @brief   get COM list on Microsoft Windows
+ * @author  Shouji, Igarashi
+ *
+ * (c) 2019 Shouji, Igarashi.
+ *
+ * @see string
+ * @see vector
+ */
+
 #include "ComList.hpp"
 #include <windows.h>
 #include <setupapi.h>
 #include <initguid.h>
+#include <hidsdi.h>
 #include <iconv.h>
 
 using namespace std;
 
-extern "C"
-{
-#include "hidsdi.h"
-}
-
+/**
+ * convert to UTF8 string from CP932
+ *
+ * @param   dst
+ * @param   icd
+ * @param   src
+ * @param   size
+ */
 static void toUTF8(string & dst, iconv_t & icd, char * src, size_t size)
 {
     size_t sz = size;
@@ -25,6 +42,9 @@ static void toUTF8(string & dst, iconv_t & icd, char * src, size_t size)
     }
 }
 
+/**
+ * constractor on ComList: create COM list
+ */
 ComList::ComList(void)
 {
     HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_COMPORT, 0, 0, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE);
@@ -72,10 +92,16 @@ ComList::ComList(void)
     }
 }
 
+/**
+ * destractor on ComList
+ */
 ComList::~ComList(void)
 {
 }
 
+/**
+ * reference of COM list
+ */
 vector<string> & ComList::ref(void)
 {
     return list;
@@ -85,6 +111,12 @@ vector<string> & ComList::ref(void)
 #include <iostream>
 #include <cstdio>
 
+/*
+ * main of Comlist.exe
+ * <pre>
+ *  > ComList.exe
+ * </pre>
+ */
 int main(int argc, char * argv[])
 {
     ComList com;
