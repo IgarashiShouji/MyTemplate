@@ -2,9 +2,9 @@ TARGET=test.exe
 
 CFLAGS=-g -Wall -pipe -I ./Include --input-charset=UTF-8 --exec-charset=UTF-8 -O3 -march=native
 ifdef MSYSTEM
-LIBS=-L . -lMyTemplate -lboost_program_options-mt -lpthread -lws2_32 -static
+LIBS=-L . -lMyTemplate -lboost_program_options-mt -lboost_filesystem-mt -lpthread -lws2_32 -static
 else
-LIBS=-L . -lMyTemplate  -lboost_program_options -lboost_regex -lboost_system -lpthread
+LIBS=-L . -lMyTemplate  -lboost_program_options -lpthread
 endif
 CPPFLAGS=$(CFLAGS) -std=c++14
 
