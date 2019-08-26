@@ -15,7 +15,7 @@ all: Objects $(TARGET) WorkerThread.exe TextFilter.exe SerialCotrol.exe
 endif
 
 clean:
-	rm -rf $(TARGET) libMyTemplate.a Objects WorkerThread.exe TextFilter.exe
+	rm -rf $(TARGET) libMyTemplate.a Objects WorkerThread.exe TextFilter.exe SerialCotrol.exe
 
 Objects:
 	mkdir -p Objects

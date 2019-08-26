@@ -1,3 +1,28 @@
+/**
+ * SerialControl Template on boost
+ *
+ * @file    SerialContol.cpp
+ * @brief   Serial Control Sample Code on Boost Library and std::istream
+ * @author  Shouji, Igarashi
+ *
+ * (c) 2018 Shouji, Igarashi.
+ *
+ * <li>Sample Test
+ * <pre>
+ *  # socat -d -d pty,raw,echo=0 pty,raw,echo=0
+ *  2019/08/26 10:30:11 socat[1921] N PTY is /dev/pts/2
+ *  2019/08/26 10:30:11 socat[1921] N PTY is /dev/pts/3
+ *  # SerialCotrol.exe -c /dev/pts/2
+ *  # cat Source/SerialCotrol.cpp > /dev/pts/3
+ * </pre>
+ *
+ * @see string
+ * @see istream
+ * @see boost::asio::streambuf
+ * @see boost::asio::io_service
+ * @see boost::asio::serial_port
+ */
+
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -9,6 +34,17 @@
 using namespace std;
 using namespace boost::program_options;
 
+/**
+ * Serial Control on Boost library and std::istream
+ * default serial profile 
+ * item            | descriptor
+ * ----------------|------------
+ *  Speed          | 9600 bps
+ *  character size | 8 bit
+ *  stop bit       | 1 bit
+ *  parity         | even
+ *
+ */
 class SerialConrol
 {
 protected:
@@ -24,8 +60,13 @@ public:
     virtual void wait(const string & text);
 };
 
+/**
+ * constractor on SerialControl
+ *
+ * @param name      serial device file
+ */
 SerialConrol::SerialConrol(const string & name)
-  : port(io, name)//, is(&buff)
+  : port(io, name)
 {
     port.set_option(boost::asio::serial_port_base::baud_rate(9600));
     port.set_option(boost::asio::serial_port_base::character_size(8));
@@ -34,11 +75,21 @@ SerialConrol::SerialConrol(const string & name)
     port.set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
 }
 
+/**
+ * destractor on SerialControl
+ */
 SerialConrol::~SerialConrol(void)
 {
     port.close();
 }
 
+/**
+ * data send of byte data
+ *
+ * @param   data        buffer pointer on send data
+ * @param   size        buffer size on send data
+ * @return  data size of the transmission result
+ */
 size_t SerialConrol::send(const char * data, size_t size)
 {
     if(0<size)
@@ -52,11 +103,22 @@ size_t SerialConrol::send(const char * data, size_t size)
     return 0;
 }
 
+/**
+ * data send of string
+ *
+ * @param   text        The string to send
+ * @return  data size of the transmission result
+ */
 size_t SerialConrol::send(const string & text)
 {
     return send(text.c_str(), text.size());
 }
 
+/**
+ * waitting of string receive
+ *
+ * @param   text        receiving of string
+ */
 void SerialConrol::wait(const string & text)
 {
     if(port.is_open())
@@ -66,8 +128,8 @@ void SerialConrol::wait(const string & text)
         while(1)
         {
             boost::asio::streambuf      buff;
-            boost::asio::read_until(port, buff, "\n");
             istream                     is(&buff);
+            boost::asio::read_until(port, buff, "\n");
             while(getline(is, str))
             {
                 cout << str << endl;
@@ -81,6 +143,16 @@ void SerialConrol::wait(const string & text)
 }
 
 #ifdef _TEST_SERIAL
+/*
+ * Test Code of Serial Control 
+ * <pre>
+ *  # socat -d -d pty,raw,echo=0 pty,raw,echo=0
+ *  2019/08/26 10:30:11 socat[1921] N PTY is /dev/pts/2
+ *  2019/08/26 10:30:11 socat[1921] N PTY is /dev/pts/3
+ *  # SerialCotrol.exe -c /dev/pts/2
+ *  # cat Source/SerialCotrol.cpp > /dev/pts/3
+ * </pre>
+ */
 int main(int argc, char * argv[])
 {
     try
@@ -112,7 +184,6 @@ int main(int argc, char * argv[])
         }
         SerialConrol com(dev_name);
         com.send("test");
-        //com.wait("OK");
         com.wait("#endif");
     }
     catch(exception & exp)
