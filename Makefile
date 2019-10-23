@@ -34,7 +34,7 @@ SerialCotrol.exe: Source/SerialCotrol.cpp libMyTemplate.a
 
 ifdef MSYSTEM
 comlist.exe: Source/ComList.cpp Include/ComList.hpp
-	g++ $(CPPFLAGS) -o $@ $< -D_COM_LIST -lsetupapi -lksguid -lole32 -lwinmm -ldsound -liconv
+	g++ $(CPPFLAGS) -static -o $@ $< -D_COM_LIST -lsetupapi -lksguid -lole32 -lwinmm -ldsound -liconv
 endif
 
 $(TARGET): Objects/main.o libMyTemplate.a
