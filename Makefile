@@ -7,14 +7,14 @@ LIBS=-L . -lMyTemplate  -lboost_program_options -lpthread
 endif
 
 ifdef MSYSTEM
-TERGETS=test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe comlist.exe
+TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe comlist.exe
 else
-TERGETS=test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe
+TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe
 endif
 all: Objects $(TERGETS)
 
 clean:
-	rm -rf $(TERGETS)
+	rm -rf $(TERGETS) libMyTemplate.a Objects html latex
 
 Objects:
 	mkdir -p Objects
@@ -22,6 +22,9 @@ Objects:
 
 Objects/%.o: Source/%.cpp
 	g++ $(CPPFLAGS) -c -o $@ $<
+
+latex/refman.pdf: $(TERGET) Doxyfile refman.sed
+		doxygen Doxyfile; cd latex; sed -f ../refman.sed -i refman.tex; make
 
 libMyTemplate.a: Objects/MyThread.o Objects/WorkerThread.o Objects/TextFilter.o Objects/SerialCotrol.o
 	ar rcus $@ $^

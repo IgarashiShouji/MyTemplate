@@ -1,20 +1,8 @@
-<style type="text/css">
-  h1  { font-weight: bold; font-size: 200%; text-decoration: underline; text-align:center; }
-  h2  { font-weight: bold; font-size: 140%; }
-  h3  { font-weight: bold; font-size: 100%; text-decoration: underline; }
-  p   { text-indent:1em;}
-  li  {}
-  ol  {}
-  tr  { font-size: 80%; }
-  img { width: 50%; }
-  hr  { page-break-after: always; }
-</style>
-
 # MyTemplate
 
 このプロジェクトは、プログラムのテンプレート集を記載する。
 
-## 目次
+## リスト
 
 | <center>No.</center>| <center>表題</center> | <center>概要</center> |
 |---:|:---|:---|
@@ -23,7 +11,7 @@
 
 ---
 
-## 1. WoekerThread
+## WoekerThread
 
 固定数のワーカースレッドを生成し、時間短縮を行う際によく作成するスレッド管理オブジェクトのテンプレート。
 
@@ -105,7 +93,7 @@ int main(int argc, char * argv[])
 
 ---
 
-## 2. TextFilter
+## TextFilter
 
 テキストファイル用のフィルタープログラムサンプル
 
