@@ -7,9 +7,9 @@ LIBS=-L . -lMyTemplate  -lboost_program_options -lpthread
 endif
 
 ifdef MSYSTEM
-TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe comlist.exe
+TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe RegexFilter.exe comlist.exe
 else
-TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe
+TERGETS=latex/refman.pdf test.exe WorkerThread.exe TextFilter.exe SerialCotrol.exe RegexFilter.exe
 endif
 all: Objects $(TERGETS)
 
@@ -18,7 +18,6 @@ clean:
 
 Objects:
 	mkdir -p Objects
-
 
 Objects/%.o: Source/%.cpp
 	g++ $(CPPFLAGS) -c -o $@ $<
@@ -41,9 +40,11 @@ TextFilter.exe: Source/TextFilter.cpp libMyTemplate.a
 SerialCotrol.exe: Source/SerialCotrol.cpp libMyTemplate.a
 	g++ $(CPPFLAGS) -o $@ $< -D_TEST_SERIAL $(LIBS)
 
+RegexFilter.exe: Source/RegexFilter.cpp
+	g++ $(CPPFLAGS) -static -o $@ $<
+
 comlist.exe: Source/ComList.cpp Include/ComList.hpp
 	g++ $(CPPFLAGS) -static -o $@ $< -D_COM_LIST -lsetupapi -lksguid -lole32 -lwinmm -ldsound -liconv
-
 
 
 Objects/main.o:         Source/main.cpp         Include/MyThread.hpp Include/WorkerThread.hpp

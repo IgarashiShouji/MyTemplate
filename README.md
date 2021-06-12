@@ -6,8 +6,9 @@
 
 | <center>No.</center>| <center>表題</center> | <center>概要</center> |
 |---:|:---|:---|
-|  1 | WorkerThrad | 固定数のワーカースレッド生成・管理クラス(stl:thread版)のテンプレート |
-|  2 | TextFilter  | テキストファイル・フィルターのテンプレート |
+|  1 | WoekerThread | 固定数のワーカースレッド生成・管理クラス(stl:thread版)のテンプレート |
+|  2 | TextFilter   | テキストファイル・フィルターのテンプレート |
+|  3 | RegexFilter  | 標準入力を正規表現で置換するテキストフィルタのテンプレート |
 
 ---
 
@@ -150,6 +151,28 @@ int main(int argc, char * argv[])
 * std::vector
 * std::cstring
 * std::cstdio
+
+### 備考
+
+なし
+
+
+## RegexFilter
+
+標準入力を正規表現で置換するテキストフィルタのテンプレート
+
+### サンプル
+
+~~~
+ cat Source/RegexFilter.cpp | ./RegexFilter.exe | less
+~~~
+
+### 依存
+
+ * std::iostream
+ * std::string
+ * std::regex
+ * std::cstdlib
 
 ### 備考
 

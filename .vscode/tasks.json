@@ -1,0 +1,8 @@
+{
+    "type": "shell",
+    "label": "C++",
+    "command": "make",
+    "args": [
+        "-j4"
+    ]
+}
