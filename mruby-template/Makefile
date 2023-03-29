@@ -1,29 +1,29 @@
 #
-#	Makefile
+#  Makefile
 #
 
-all: Objects mruby test
+all: objects mruby test
 
 clean:
-	/bin/rm -rf Objects mruby test default.rb.lock
+	/bin/rm -rf objects mruby test default.rb.lock
 
 mruby:
-	/bin/bash get-github.sh
+	/bin/bash script/get-mruby.sh
 
-Objects:
-	mkdir Objects
+objects:
+	mkdir objects
 
-test: Objects/main.o
-	g++ -o $@ $^ -L Objects -L mruby/build/host/lib -lmruby -lmystub -lboost_program_options
+test: objects/main.o
+	g++ -o $@ $^ -L objects -L mruby/build/host/lib -lmruby -lmystub -lboost_program_options
 
-Objects/libmystub.a: Objects/mystub.o
+objects/libmystub.a: objects/mystub.o
 	ar rcs $@ $^
 
-Objects/mystub.o: Source/mystub.c Include/mystub.h
-	gcc -c -I Include -o $@ $<
+objects/mystub.o: source/mystub.c include/mystub.h
+	gcc -c -I include -o $@ $<
 
-mruby/build/host/lib/libmruby.a: mruby Objects/libmystub.a mruby-mystub/src/mruby_mysub.c mruby-mystub/include/mruby/mruby_mystub/mruby_mystub.h
-	bash build-mruby.sh
+mruby/build/host/lib/libmruby.a: mruby objects/libmystub.a mruby-mystub/src/mruby_mysub.c mruby-mystub/include/mruby/mruby_mystub/mruby_mystub.h
+	bash script/build-mruby.sh
 
-Objects/main.o: Source/main.cpp mruby/build/host/lib/libmruby.a
-	g++ -c -I Include/ -I mruby/include/ -o $@ $<
+objects/main.o: source/main.cpp mruby/build/host/lib/libmruby.a
+	g++ -c -I include/ -I mruby/include/ -o $@ $<

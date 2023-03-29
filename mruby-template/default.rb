@@ -24,7 +24,7 @@ MRuby::Build.new do |conf|
     cc.command = ENV['CC'] || 'gcc'
 #    cc.command = ENV['CC'] || 'gcc'
 #    cc.flags = [ENV['CFLAGS'] || %w()]
-    cc.include_paths = ["#{root}/include", "#{root}/../Include"]
+    cc.include_paths = ["#{root}/include", "#{root}/../include"]
 #    cc.defines = %w()
 #    cc.option_include_path = %q[-I"%s"]
 #    cc.option_define = '-D%s'
@@ -44,8 +44,7 @@ MRuby::Build.new do |conf|
 #    linker.flags_before_libraries = []
 #    linker.libraries = %w()
     linker.flags_after_libraries = ['-lmystub']
-    linker.library_paths = ["#{root}/../Objects"]
-#    linker.library_paths = ['../Objects/']
+    linker.library_paths = ["#{root}/../objects"]
 #    linker.option_library = '-l%s'
 #    linker.option_library_path = '-L%s'
 #    linker.link_options = %Q[%{flags} -o "%{outfile}" %{objs} %{libs}]
