@@ -12,16 +12,16 @@
 #include <mruby/hash.h>
 #include <mruby/variable.h>
 
+#include "help.c"
+
 using namespace boost;
 using namespace std;
 
 static void print_help_message(boost::program_options::options_description & desc)
 {
-    cout << endl;
-    cout << "mruby template test program: Software Revision 0.0.1" << endl;
-    cout << endl;
-    cout << " > test [Options]"<< endl;
-    cout << endl;
+    mrb_state * mrb = mrb_open();
+    mrb_load_irep(mrb, mruby_help);
+    mrb_close(mrb);
     cout << desc << endl;
 }
 

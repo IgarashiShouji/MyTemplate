@@ -25,5 +25,8 @@ objects/mystub.o: source/mystub.c include/mystub.h
 mruby/build/host/lib/libmruby.a: mruby objects/libmystub.a mruby-mystub/src/mruby_mysub.c mruby-mystub/include/mruby/mruby_mystub/mruby_mystub.h default.rb
 	bash script/build-mruby.sh
 
-objects/main.o: source/main.cpp mruby/build/host/lib/libmruby.a
+source/help.c: mruby/build/host/lib/libmruby.a
+	./mruby/bin/mrbc -s -Bmruby_help -o source/help.c source/help.rb
+
+objects/main.o: source/main.cpp source/help.c mruby/build/host/lib/libmruby.a
 	g++ -c -I include/ -I mruby/include/ -o $@ $<
