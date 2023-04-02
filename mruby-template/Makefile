@@ -22,7 +22,7 @@ objects/libmystub.a: objects/mystub.o
 objects/mystub.o: source/mystub.c include/mystub.h
 	gcc -c -I include -o $@ $<
 
-mruby/build/host/lib/libmruby.a: mruby objects/libmystub.a mruby-mystub/src/mruby_mysub.c mruby-mystub/include/mruby/mruby_mystub/mruby_mystub.h
+mruby/build/host/lib/libmruby.a: mruby objects/libmystub.a mruby-mystub/src/mruby_mysub.c mruby-mystub/include/mruby/mruby_mystub/mruby_mystub.h default.rb
 	bash script/build-mruby.sh
 
 objects/main.o: source/main.cpp mruby/build/host/lib/libmruby.a

@@ -6,9 +6,10 @@
 
 | <center>No.</center>| <center>表題</center> | <center>概要</center> |
 |---:|:---|:---|
-|  1 | WoekerThread | 固定数のワーカースレッド生成・管理クラス(stl:thread版)のテンプレート |
-|  2 | TextFilter   | テキストファイル・フィルターのテンプレート |
-|  3 | RegexFilter  | 標準入力を正規表現で置換するテキストフィルタのテンプレート |
+|  1 | WoekerThread   | 固定数のワーカースレッド生成・管理クラス(stl:thread版)のテンプレート |
+|  2 | TextFilter     | テキストファイル・フィルターのテンプレート |
+|  3 | RegexFilter    | 標準入力を正規表現で置換するテキストフィルタのテンプレート |
+|  4 | mruby-template | mruby を使用した開発環境 |
 
 ---
 
