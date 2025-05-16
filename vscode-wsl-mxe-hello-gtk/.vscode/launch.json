@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Win32 App with MSYS2 GDB",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "t:/github/MyTemplate/vscode-wsl-mxe-hello-gtk/hello.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "t:/github/MyTemplate/vscode-wsl-mxe-hello-gtk",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
